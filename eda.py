@@ -4,7 +4,7 @@ import os
 import seaborn as sns
 import folium 
 
-# Set paths
+
 forest_path = './clean_data/forest.csv'
 save_folder = './eda_results'
 
