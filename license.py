@@ -49,6 +49,8 @@ license_data = process_license_data(license)
 if license_data is not None:
     print(license_data.head())
 
+license_data.to_csv('./clean_data/license.csv')
+
 district_license_count = license_data.groupby('District').size().reset_index(name='Number of Licenses')
 district_license_count.to_csv('./clean_data/district_license_count.csv', index=False)
 
@@ -62,5 +64,7 @@ def get_number_of_licenses(district):
         return None
 district_license_count['District'] = district_license_count['District'].str.replace(r'\s*(District|Region)\s*', '', regex=True)
 forest_df['Number of Licenses'] = forest_df['subnational2'].apply(get_number_of_licenses)
+print(forest_df.head())
+forest_df.to_csv('./clean_data/forest.csv', index=False)
 print(forest_df['Number of Licenses'].nunique())
 
