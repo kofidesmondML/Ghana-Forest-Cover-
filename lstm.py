@@ -88,7 +88,18 @@ def process_district(district_data, sequence_length=10):
     except Exception as e:
         print(f"Error processing district {district_data['subnational2'].iloc[0]}: {e}")
         return None
-
+def reshape_and_save(lstm_df, output_path='./clean_data/predictions.csv'):
+    try:
+        reshaped_df = lstm_df.transpose()
+        reshaped_df = reshaped_df.reset_index()
+        reshaped_df = reshaped_df.rename(columns={'index': 'District'})
+        reshaped_df.columns = ['District', 2024, 2025, 2026, 2027, 2028]
+        reshaped_df.to_csv(output_path, index=False)
+        return reshaped_df
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+    
 def main():
     forest_path = './clean_data/forest.csv'
     forest_df = load_data(forest_path)
@@ -115,5 +126,8 @@ def main():
         print(f"Predictions for {district}: {predictions}")
     predictions_df=pd.DataFrame(predictions_dict)
     predictions_df.to_csv('./clean_data/lstm_predictions.csv', index=False)
+    lstm_df=pd.read_csv('./clean_data/lstm_predictions.csv')
+    final_df=reshape_and_save(lstm_df)
+    print(final_df.head())
 if __name__ == "__main__":
     main()
