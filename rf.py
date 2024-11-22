@@ -1,86 +1,71 @@
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import matplotlib.pyplot as plt
-from xgboost import XGBRegressor
-from lightgbm import LGBMRegressor
 import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.multioutput import MultiOutputRegressor
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from sklearn.preprocessing import StandardScaler
 
-file_path = './clean_data/forest.csv'
-data = pd.read_csv(file_path)
 
-columns = [f"tc_loss_ha_{year}" for year in range(2001, 2024)]
-data = data[columns].T
-data.index = range(2001, 2024)
-data.columns = [f"region_{i}" for i in range(data.shape[1])]
-
-train_years = 18
-test_years = 5
-X_train = data.iloc[:train_years, :]
-X_test = data.iloc[train_years:, :]
-y_train = X_train.mean(axis=1)
-y_test = X_test.mean(axis=1)
-
-def create_lagged_features(data, n_lags=3):
-    lagged_data = []
-    for i in range(n_lags, len(data)):
-        lagged_data.append(data.iloc[i-n_lags:i, :].values.flatten())
-    return np.array(lagged_data)
-
-lags = 3
-X_train_lagged = create_lagged_features(X_train, lags)
-X_test_lagged = create_lagged_features(X_test, lags)
-y_train_lagged = y_train[lags:]
-y_test_lagged = y_test[lags:]
+forest_path='./clean_data/forest.csv'
+forest_df=pd.read_csv(forest_path)
+X = forest_df[[f"tc_loss_ha_{year}" for year in range(2001, 2019)]]
+y = forest_df[[f"tc_loss_ha_{year}" for year in range(2019, 2024)]]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=42)
 
 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-rf_model.fit(X_train_lagged, y_train_lagged)
-rf_preds = rf_model.predict(X_test_lagged)
+rf_model.fit(X_train, y_train)
+y_pred_rf = rf_model.predict(X_test)
+r2_rf = r2_score(y_test, y_pred_rf)
 
-xgb_model = XGBRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
-xgb_model.fit(X_train_lagged, y_train_lagged)
-xgb_preds = xgb_model.predict(X_test_lagged)
+gb_model = GradientBoostingRegressor(n_estimators=100, random_state=42)
+multi_target_model = MultiOutputRegressor(gb_model)
+multi_target_model.fit(X_train, y_train)
+y_pred_multi = multi_target_model.predict(X_test)
+r2_multi = r2_score(y_test, y_pred_multi)
 
-lgb_model = LGBMRegressor(n_estimators=100, learning_rate=0.1, random_state=42)
-lgb_model.fit(X_train_lagged, y_train_lagged)
-lgb_preds = lgb_model.predict(X_test_lagged)
+X_scaled = StandardScaler().fit_transform(X)
+y_scaled = StandardScaler().fit_transform(y)
+X_scaled = X_scaled.reshape(X_scaled.shape[0], X_scaled.shape[1], 1)
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.4, random_state=42)
 
-def evaluate(y_true, y_pred, model_name):
-    mae = mean_absolute_error(y_true, y_pred)
-    mse = mean_squared_error(y_true, y_pred)
-    r2 = r2_score(y_true, y_pred)
-    print(f"{model_name} - MAE: {mae:.4f}, MSE: {mse:.4f}, R2: {r2:.4f}")
-    return mae, mse, r2
+model = Sequential()
+model.add(LSTM(units=128, return_sequences=False, input_shape=(X_train.shape[1], 1)))
+model.add(Dropout(0.2))
+model.add(Dense(units=64))
+model.add(Dropout(0.25))
+model.add(Dense(units=5))
+model.compile(optimizer='adam', loss='mean_squared_error')
 
-print("Evaluating Models:")
-rf_results = evaluate(y_test_lagged, rf_preds, "Random Forest")
-xgb_results = evaluate(y_test_lagged, xgb_preds, "XGBoost")
-lgb_results = evaluate(y_test_lagged, lgb_preds, "LightGBM")
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-6, verbose=1)
 
-def plot_predictions(y_true, y_pred, model_name):
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(2019, 2024)[lags:], y_true, label="Actual", marker='o')
-    plt.plot(range(2019, 2024)[lags:], y_pred, label=f"{model_name} Predictions", marker='x')
-    plt.xlabel("Year")
-    plt.ylabel("Tree Cover Loss (ha)")
-    plt.title(f"{model_name} Predictions vs Actual")
-    plt.legend()
+model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test), 
+          callbacks=[early_stopping, reduce_lr])
 
-output_dir = './predictions_evaluation'
+y_pred_lstm = model.predict(X_test)
+r2_lstm = r2_score(y_test, y_pred_lstm)
+
+r2_scores = {'Random Forest': r2_rf, 'Gradient Boosting': r2_multi, 'LSTM': r2_lstm}
+
+output_dir = 'lstm_evaluation'
 os.makedirs(output_dir, exist_ok=True)
 
-plot_predictions(y_test_lagged, rf_preds, "Random Forest")
-plt.savefig(f"{output_dir}/rf_predictions.png")
-plt.close()
+plt.figure(figsize=(8, 6))
+plt.bar(r2_scores.keys(), r2_scores.values(), color=['blue', 'green', 'red'])
+plt.xlabel('Model')
+plt.ylabel('R² Score')
+plt.title('R² Score for Different Models')
+plt.ylim([0, 1])
 
-plot_predictions(y_test_lagged, xgb_preds, "XGBoost")
-plt.savefig(f"{output_dir}/xgb_predictions.png")
-plt.close()
+plt.savefig(os.path.join(output_dir, 'r2_score.png'))
 
-plot_predictions(y_test_lagged, lgb_preds, "LightGBM")
-plt.savefig(f"{output_dir}/lgb_predictions.png")
-plt.close()
-
-print("Plots saved to 'predictions_evaluation' folder.")
+print(f"R² Score for Random Forest: {r2_rf:.2f}")
+print(f"R² Score for Gradient Boosting: {r2_multi:.2f}")
+print(f"R² Score for LSTM: {r2_lstm:.2f}")
