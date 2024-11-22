@@ -16,6 +16,7 @@ def load_data(file_path):
 def prepare_data(district_data, sequence_length=10):
     try:
         losses = district_data.loc[:, 'tc_loss_ha_2001':'tc_loss_ha_2023'].values.flatten()
+        print(f' This is the length {len(losses)}')
         if len(losses) <= sequence_length:
             print(f"Not enough data for sequence preparation in district: {district_data['subnational2'].iloc[0]}")
             return None, None, None
