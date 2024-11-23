@@ -37,7 +37,7 @@ X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_siz
 
 model = Sequential()
 model.add(LSTM(units=128, return_sequences=False, input_shape=(X_train.shape[1], 1)))
-model.add(Dropout(0.2))
+model.add(Dropout(0.25))
 model.add(Dense(units=64))
 model.add(Dropout(0.25))
 model.add(Dense(units=5))
@@ -63,7 +63,6 @@ plt.xlabel('Model')
 plt.ylabel('R² Score')
 plt.title('R² Score for Different Models')
 plt.ylim([0, 1])
-
 plt.savefig(os.path.join(output_dir, 'r2_score.png'))
 
 print(f"R² Score for Random Forest: {r2_rf:.2f}")
