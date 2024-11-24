@@ -19,7 +19,7 @@ def cusum_detection(series, threshold):
     return change_points
 
 years = np.arange(2001, 2024)
-print(len(years))
+#print(len(years))
 
 for district in forest_df['subnational2'].unique():
     series = forest_df[forest_df['subnational2'] == district].iloc[:, 8:31].values.flatten()
@@ -29,10 +29,9 @@ for district in forest_df['subnational2'].unique():
         print(f"Skipping {district} due to mismatched data length: {len(series)} vs {len(years)}")
         continue
 
-    change_points = cusum_detection(series, threshold=100)
+    change_points = cusum_detection(series, threshold=50)
 
     if len(change_points) > 0:
-        plt.style.use('ggplot')
         plt.figure(figsize=(10, 6))
         plt.plot(years, series, label='Forest Loss Data', color='blue', marker='o')
         plt.scatter(years[change_points], series[change_points], color='red', label='Change Points', zorder=5)
@@ -43,6 +42,7 @@ for district in forest_df['subnational2'].unique():
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
+        #plt.show()
         file_path = os.path.join(output_folder, f"{district}_change_points.png")
         plt.savefig(file_path, dpi=300)
         plt.close()
