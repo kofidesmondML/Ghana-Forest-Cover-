@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 import os
 import seaborn as sns
 import folium 

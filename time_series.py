@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 
 forest_path = './clean_data/forest.csv'
 forest_df = pd.read_csv(forest_path)
