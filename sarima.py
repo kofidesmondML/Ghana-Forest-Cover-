@@ -1,11 +1,14 @@
+import os
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
 plt.style.use('ggplot')
-import numpy as np
-import os 
+
 os.makedirs('./sarima_evaluation', exist_ok=True)
 
 forest_df = pd.read_csv('./clean_data/forest.csv')
@@ -24,14 +27,10 @@ plt.legend()
 plt.savefig('./sarima_evaluation/tree_cover_loss_over_time.png')
 
 result = adfuller(tc_loss_data)
-print(f"ADF Statistic: {result[0]}")
-print(f"p-value: {result[1]}")
 
 if result[1] > 0.05:
-    print("The time series is non-stationary. Differencing is required.")
     tc_loss_data_diff = tc_loss_data.diff().dropna()
 else:
-    print("The time series is stationary.")
     tc_loss_data_diff = tc_loss_data
 
 plot_acf(tc_loss_data_diff)
@@ -65,10 +64,6 @@ for p in range(0, 3):
                         except:
                             continue
 
-print(f"Best SARIMA Order: {best_order}")
-print(f"Best Seasonal Order: {best_seasonal_order}")
-print(best_model.summary())
-
 forecast_steps = 10
 forecast = best_model.forecast(steps=forecast_steps)
 forecast_index = range(2024, 2024 + forecast_steps)
@@ -83,3 +78,23 @@ plt.xticks(list(tc_loss_data.index) + list(forecast_index), rotation=45)
 plt.grid(True)
 plt.legend()
 plt.savefig('./sarima_evaluation/tree_cover_loss_forecast.png')
+
+actual_data = tc_loss_data.loc[2019:2023]
+forecast_values = forecast[:len(actual_data)]
+actual_values = actual_data.values
+
+mae = mean_absolute_error(actual_values, forecast_values)
+mse = mean_squared_error(actual_values, forecast_values)
+r2 = r2_score(actual_values, forecast_values)
+
+evaluation_results = {
+    'MAE': mae,
+    'MSE': mse,
+    'R2': r2,
+}
+
+evaluation_results_path = './sarima_evaluation/sarima_evaluation_metrics.txt'
+
+with open(evaluation_results_path, 'w') as f:
+    for metric, value in evaluation_results.items():
+        f.write(f"{metric}: {value:.2f}\n")
