@@ -76,9 +76,9 @@ plot_total_tree_cover_loss()
 def plot_tree_cover_gain_distribution():
     plt.figure(figsize=(10, 6))
     sns.histplot(df['gain_2000-2020_ha'], bins=10, kde=True, color='green', edgecolor='black')
-    plt.title('Distribution of Tree Cover Gain 2000-2020 Across Constituencies', fontsize=16)
+    plt.title('Distribution of Tree Cover Gain 2000-2020 Across Districts', fontsize=16)
     plt.xlabel('Tree Cover Gain (ha)', fontsize=14)
-    plt.ylabel('Number of Constituencies', fontsize=14)
+    plt.ylabel('Number of Districts', fontsize=14)
     plt.grid(True)
     
     save_path = os.path.join(save_folder, 'tree_cover_gain_distribution.png')
@@ -132,7 +132,7 @@ def plot_tree_cover_loss_by_region(region):
     plt.bar(region_df['subnational2'], region_df['total_tc_loss'], color='blue')
     plt.xticks(rotation=90)
     plt.title(f"Total Tree Cover Loss for Constituencies in {region}")
-    plt.xlabel("Constituency")
+    plt.xlabel("Districts")
     plt.ylabel("Total Tree Cover Loss (ha)")
     plt.tight_layout()
     
