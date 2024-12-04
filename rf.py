@@ -63,14 +63,14 @@ model.add(Dropout(0.25))
 model.add(Dense(units=5))
 model.compile(optimizer='adam', loss=combined_loss)
 
-early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=1e-6, verbose=1)
+early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-6, verbose=1)
 
 model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test),
           callbacks=[early_stopping, reduce_lr])
 
 y_pred_lstm = model.predict(X_test)
-
+ 
 y_pred_lstm_orig = scaler_y.inverse_transform(y_pred_lstm)
 y_test_orig = scaler_y.inverse_transform(y_test)
 
