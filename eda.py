@@ -131,7 +131,7 @@ def plot_tree_cover_loss_by_region(region):
     plt.figure(figsize=(12, 6))
     plt.bar(region_df['subnational2'], region_df['total_tc_loss'], color='blue')
     plt.xticks(rotation=90)
-    plt.title(f"Total Tree Cover Loss for Constituencies in {region}")
+    plt.title(f"Total Tree Cover Loss for  Districts in {region}")
     plt.xlabel("Districts")
     plt.ylabel("Total Tree Cover Loss (ha)")
     plt.tight_layout()
