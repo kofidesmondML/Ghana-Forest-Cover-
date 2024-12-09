@@ -70,10 +70,10 @@ The project includes three machine learning models for predicting tree cover los
 
 ```bash
 python rf.py
+```
 
 ## Results
-
-After running the model training, the results will be saved in the `./lstm_evaluation/` folder:
+After running the model training, the results will be saved in the './lstm_evaluation/` folder:
 
 - **R², MSE, and MAE bar plots** for each model (`r2_score.png`, `mse_score.png`, `mae_score.png`).
 - A **text file** (`evaluation_metrics.txt`) containing the evaluation metrics.
@@ -87,6 +87,7 @@ Change detection is performed using the CUSUM method to identify significant cha
 Run the script for change point detection:
 
 ```bash
-python change_detection.py
+python time_series.py
+```
 
 
