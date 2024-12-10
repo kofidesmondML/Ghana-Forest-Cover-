@@ -13,6 +13,7 @@ from keras.layers import LSTM, Dense, Dropout
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
+import csv
 
 # Load data
 forest_path = './clean_data/forest.csv'
@@ -83,11 +84,20 @@ r2_scores = {'Random Forest': r2_rf, 'Gradient Boosting': r2_multi, 'LSTM': r2_l
 mse_scores = {'Random Forest': mse_rf, 'Gradient Boosting': mse_multi, 'LSTM': mse_lstm}
 mae_scores = {'Random Forest': mae_rf, 'Gradient Boosting': mae_multi, 'LSTM': mae_lstm}
 
+metrics = {
+    'Model': list(r2_scores.keys()),
+    'R2 Score': list(r2_scores.values()),
+    'Mean Squared Error': list(mse_scores.values()),
+    'Mean Absolute Error': list(mae_scores.values())
+}
+
 # Plot Results
 output_dir = 'lstm_evaluation'
 os.makedirs(output_dir, exist_ok=True)
 
-plt.figure(figsize=(8, 6))
+metrics_csv_path = os.path.join(output_dir, 'evaluation_metrics.csv')
+
+plt.figure(figsize=(8, 6)) 
 plt.bar(r2_scores.keys(), r2_scores.values(), color=['blue', 'green', 'red'])
 plt.xlabel('Model', fontsize=14, fontweight='bold')
 plt.ylabel('R² Score', fontsize=14, fontweight='bold')
@@ -117,6 +127,13 @@ for i, v in enumerate(mae_scores.values()):
     plt.text(i, v + 0.02, f"{v:.2f}", ha='center', fontsize=12)
 mae_plot_path = os.path.join(output_dir, 'mae_score.png')
 plt.savefig(mae_plot_path)
+
+with open(metrics_csv_path, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(metrics.keys()) 
+    writer.writerows(zip(*metrics.values()))  
+
+print(f"Evaluation metrics saved to {metrics_csv_path}")
 
 # Print Results
 print("R² Scores:", r2_scores)
